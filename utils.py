@@ -1,12 +1,22 @@
+"""
+Author: Rahul Tole
+Useful utilities
+"""
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import torch
 
+# avoids 0/0 division error
+# classes in the dataset labels
 SMOOTH = 1e-6
 CLASSES = 4
 
 def check_accuracy(loader, model, weights, device):
+    """
+    Dice score evaluation of the model using the test set
+    Formula: 2*Intersection / total_preds + total_label (all pixel counts)
+    """
     model.eval()
     
     total_intersection = torch.zeros(CLASSES, device=device)
@@ -34,16 +44,22 @@ def check_accuracy(loader, model, weights, device):
     
     accuracy = round(np.average(dice_scores, weights=weights), 4)
     
-    print(f"Class-wise Dice: {dice_scores}")
+    print(f"Class-wise Dice: {dice_scores.round(decimals=4)}")
     print(f"Avg Dice Accuracy: {accuracy}")
 
     return accuracy
 
 def get_pixel_mask(label):
+    """
+    Returns bool tensor of valid pixels
+    """
     valid_pixel_mask = label != -100
     return valid_pixel_mask
 
 def model_checkpoint(mode, model, optimizer, save_file=None, epoch=0, checkpoint=None):
+        """
+        Loads & saves trained model checkpoint
+        """
         if mode == "load":
             if checkpoint:
                 print(f"Resuming from checkpoint {checkpoint}...")
@@ -63,6 +79,9 @@ def model_checkpoint(mode, model, optimizer, save_file=None, epoch=0, checkpoint
             torch.save(checkpoint, cur_save_file)
 
 def get_class_weights(dataloader):
+    """
+    Calculates weights for imbalanced classes
+    """
     class_count = torch.zeros(CLASSES, dtype=torch.float32)
 
     for _, label in dataloader:
@@ -76,6 +95,9 @@ def get_class_weights(dataloader):
     return weights.float()
 
 def plot_img(image, preds, label):
+    """
+    Plots image with class predictions overlay
+    """
     color_mask = np.array([
         [139, 69, 19],
         [0, 255, 0],
